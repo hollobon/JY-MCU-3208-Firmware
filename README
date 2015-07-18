@@ -13,3 +13,7 @@
 +// button1: adjust time forward, keep pressed for a while for fast forward
 +// button2: adjust time backward, keep pressed for a while for fast backward
 +// button3: toggle "Child Safe" mode
+
+To program with a USBasp under Linux, use something along the lines of:
+
+    $ sudo avrdude -p m8 -c usbasp -U flash:w:clock.hex
