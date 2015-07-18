@@ -1,3 +1,5 @@
+OPT_DEFS += -DTIC_LENGTH_MS=250
+
 ARCH = AVR8
 
 MCU = atmega8

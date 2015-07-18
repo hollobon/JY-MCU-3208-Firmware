@@ -366,8 +366,8 @@ int main(void) {  //============================================================
     if(clockhandler()) { renderclock(); HTsendscreen(); }
 	if (childsafe == 0) {
 		int shtfck = gen_rand();
-		if((shtfck > 20) && (shtfck < 25)) { rendershit(); HTsendscreen(); _delay_ms(70); renderclock(); HTsendscreen(); }
-		if((shtfck > 0) && (shtfck < 5)) { renderfuck(); HTsendscreen(); _delay_ms(70); renderclock(); HTsendscreen(); }
+		if((shtfck > 20) && (shtfck < 25)) { rendershit(); HTsendscreen(); _delay_ms(TIC_LENGTH_MS); renderclock(); HTsendscreen(); }
+		if((shtfck > 0) && (shtfck < 5)) { renderfuck(); HTsendscreen(); _delay_ms(TIC_LENGTH_MS); renderclock(); HTsendscreen(); }
 	}
   }
   return(0);
