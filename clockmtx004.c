@@ -170,6 +170,10 @@ void renderclock(void) {
     for (byte i = 0;i<6;i++) leds[col++] = pgm_read_byte(&bigdigits[hour % 10][i]);
     leds[col++] = 0;
 
+#ifdef BINARY_SECONDS
+    leds[col++] = (sec & 2) << 1 | (sec & 8) | (sec & 32) >> 1;
+    leds[col++] = (sec & 1) << 2 | (sec & 4) << 1 | (sec & 16);
+#else
     if (sec % 2) {
         leds[col++] = 0b00000000;
         leds[col++] = 0b00100100;
@@ -178,6 +182,7 @@ void renderclock(void) {
         leds[col++] = 0b00100100;
         leds[col++] = 0b00000000;
     }
+#endif
 
     leds[col++] = 0;
     for (byte i = 0; i < 6; i++)
