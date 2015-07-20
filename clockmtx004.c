@@ -27,6 +27,7 @@
 #include <avr/eeprom.h>
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdint.h>            // needed for uint8_t
 
 #define byte uint8_t
@@ -36,7 +37,7 @@ unsigned int n;				/* for random number function */
 int childsafe = 0;
 
 
-const PROGMEM byte bigdigits[10][6] = {
+const byte bigdigits[10][6] PROGMEM = {
   {0b01111110,0b10000001,0b10000001,0b10000001,0b10000001,0b01111110},	// 0
   {0b00000000,0b00000000,0b10000010,0b11111111,0b10000000,0b00000000},	// 1
   {0b11100010,0b10010001,0b10010001,0b10001001,0b10001001,0b10000110},	// 2
@@ -49,18 +50,15 @@ const PROGMEM byte bigdigits[10][6] = {
   {0b00001110,0b10010001,0b10010001,0b10010001,0b10010001,0b01111110},  // 9
 };
 
-const PROGMEM byte letters[8][6] = {
+const byte letters[13][6] PROGMEM = {
   {0b00010000,0b10101000,0b10101000,0b10101000,0b10101000,0b01000000},	// s
-  {0b11111111,0b00001000,0b00001000,0b00001000,0b00001000,0b11110000},	// h
-  {0b00000000,0b00000000,0b00000000,0b11111010,0b00000000,0b00000000},	// i
-  {0b00000000,0b00001000,0b01111110,0b10001000,0b10000000,0b01000000},	// t
-  {0b00000000,0b00001000,0b11111110,0b00001001,0b00001001,0b00000010},	// f
+  {0b11111111,0b00001000,0b00001000,0b11110000,0b00000000,0b00000000},	// h
+  {0b11111010,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000},	// i
+  {0b00001000,0b01111110,0b10001000,0b10000000,0b01000000,0b00000000},	// t
+  {0b00001000,0b11111110,0b00001001,0b00001001,0b00000010,0b00000000},	// f
   {0b01111000,0b10000000,0b10000000,0b10000000,0b01000000,0b11111000},  // u
   {0b01110000,0b10001000,0b10001000,0b10001000,0b10001000,0b01000000},	// c
   {0b11111111,0b00010000,0b00010000,0b00101000,0b01000100,0b10000000},  // k
-};
-
-const PROGMEM byte control[5][6] = {
   {0b00000000,0b00111110,0b01000001,0b01000001,0b01000001,0b00100010},	// C
   {0b00100110,0b01001001,0b01001001,0b01001001,0b00110010,0b00000000},	// S
   {0b00000000,0b00111110,0b01000001,0b01000001,0b00111110,0b00000000},	// O
@@ -68,8 +66,7 @@ const PROGMEM byte control[5][6] = {
   {0b01111111,0b00001001,0b00000000,0b01111111,0b00001001,0b00000000},	// F
 };
 
-
-
+const byte letter_widths[13] PROGMEM = {6, 4, 1, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6};
 
 //pins and macros
 
@@ -268,69 +265,52 @@ void renderclock(void) {
     leds[col++]=0;	// add a 1 column space on the right
 }
 
+void renderword(unsigned int *w, unsigned int length, bool centre) {
+    byte col = 0;
+    byte i;
+
+    if (centre) {
+        byte total_width = 0;
+        for (byte pos = 0; pos < length; pos++)
+            total_width += pgm_read_byte(&letter_widths[w[pos]]);
+        if (total_width < 32) {
+            while (col < ((32 - total_width - length + 1) / 2))
+                leds[col++] = 0;
+        }
+    }
+
+    for (byte pos = 0; pos < length; pos++) {
+        if (w[pos] != 0xFFFF)
+            for (i = 0; i < pgm_read_byte(&letter_widths[w[pos]]); i++) {
+                leds[col++] = pgm_read_byte(&letters[w[pos]][i]);
+                if (col >= 32)
+                    return;
+            }
+        leds[col++] = 0;
+    }
+
+    while (col < 32)
+        leds[col++] = 0;
+}
+
 void rendershit(void) {
-    byte col=0;
-    leds[col++]=0;      // make space on the left
-    leds[col++]=0;
-    leds[col++]=0;
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&letters[0][i]);   // s
-    leds[col++]=0;	// add a little space between the letters
-    leds[col++]=0;
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&letters[1][i]);		// h
-    leds[col++]=0;
-    for (byte i=0;i<5;i++) leds[col++]=pgm_read_byte(&letters[2][i]);		// i
-    leds[col++]=0;
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&letters[3][i]);		// t
-    leds[col++]=0;
-    leds[col++]=0;
+    unsigned int word[] = {0, 1, 2, 3};
+    renderword(word, 4, true);
 }
 
 void renderfuck(void) {
-    byte col=0;
-    leds[col++]=0;      // make space on the left
-    leds[col++]=0;
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&letters[4][i]);
-    leds[col++]=0;
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&letters[5][i]);
-    leds[col++]=0;
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&letters[6][i]);
-    leds[col++]=0;
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&letters[7][i]);
-    leds[col++]=0;
-    leds[col++]=0;      // add padding on right
-    leds[col++]=0;
+    unsigned int word[] = {4, 5, 6, 7};
+    renderword(word, 4, true);
 }
 
 void rendercs_on(void) {
-    byte col=0;
-    leds[col++]=0;      // make space on the left
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&control[0][i]);
-    leds[col++]=0;
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&control[1][i]);
-    leds[col++]=0;
-    leds[col++]=0;
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&control[2][i]);
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&control[3][i]);
-    leds[col++]=0;
-    leds[col++]=0;
-    leds[col++]=0;      // add padding on right
-    leds[col++]=0;
+    unsigned int word[] = {8, 9, 0xFFFF, 10, 11};
+    renderword(word, 5, true);
 }
 
 void rendercs_off(void) {
-    byte col=0;
-    leds[col++]=0;      // make space on the left
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&control[0][i]);
-    leds[col++]=0;
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&control[1][i]);
-    leds[col++]=0;
-    leds[col++]=0;
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&control[2][i]);
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&control[4][i]);
-    leds[col++]=0;
-    leds[col++]=0;
-    leds[col++]=0;      // add padding on right
-    leds[col++]=0;
+    unsigned int word[] = {8, 9, 0xFFFF, 10, 12};
+    renderword(word, 5, true);
 }
 
 
