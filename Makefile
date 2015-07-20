@@ -8,6 +8,6 @@ MCU = atmega8
 
 TARGET = clock
 
-SRC = clockmtx004.c ht1632c.c
+SRC = clock.c ht1632c.c
 
 include rules.mk
