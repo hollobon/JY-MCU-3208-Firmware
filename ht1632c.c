@@ -6,7 +6,9 @@
 // commands can be queued: 100-ccccccccc-ccccccccc-ccccccccc-... (ccccccccc: without 100 at front)
 // setup: cast startsys, setclock, setlayout, ledon, brightness+(15 << 1), blinkoff
 
-void HTsend(word data, byte bits) {  //MSB first
+void HTsend(word data, byte bits)
+{
+    // MSB first
     word bit = ((word)1) << (bits-1);
     while (bit) {
         HTclk0;
@@ -19,13 +21,15 @@ void HTsend(word data, byte bits) {  //MSB first
     }
 }
 
-void HTcommand(word data) {
+void HTcommand(word data)
+{
     HTstrobe0;
     HTsend(data,12);
     HTstrobe1;
 }
 
-void HTsendscreen(void) {
+void HTsendscreen(void)
+{
     HTstrobe0;
     HTsend(HTwrite,10);
     for (byte mtx = 0; mtx < 4; mtx++)        //sending 8x8-matrices left to right, rows top to bottom, MSB left
@@ -38,7 +42,8 @@ void HTsendscreen(void) {
     HTstrobe1;
 }
 
-void HTsetup() {  //setting up the display
+void HTsetup()
+{  //setting up the display
     HTcommand(HTstartsys);
     HTcommand(HTledon);
     HTcommand(HTsetclock);
@@ -47,6 +52,7 @@ void HTsetup() {  //setting up the display
     HTcommand(HTblinkoff);
 }
 
-void HTbrightness(byte b) {
+void HTbrightness(byte b)
+{
     HTcommand(HTsetbright + ((b & 15) << 1));
 }
