@@ -171,6 +171,8 @@ void renderclock(void) {
     leds[col++] = 0;
 
 #ifdef BINARY_SECONDS
+    leds[col++] = sec << 1;
+#elif defined(BINARY_SECONDS_DOUBLE)
     leds[col++] = (sec & 2) << 1 | (sec & 8) | (sec & 32) >> 1;
     leds[col++] = (sec & 1) << 2 | (sec & 4) << 1 | (sec & 16);
 #else
