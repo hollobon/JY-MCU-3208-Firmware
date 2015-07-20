@@ -1,4 +1,4 @@
-// Clock program for DX 32*8 LED Matrix + HT1632C + ATmega8;
+
 // DrJones 2012
 //
 // Clock with Tics for JY-MCU 3208 by Michael LeBlanc, NSCAD University
@@ -14,9 +14,6 @@
 // button2: adjust time backward, keep pressed for a while for fast backward
 // button3: toggle "Child Safe" mode
 
-
-
-
 #define F_CPU 1000000
 
 #include <avr/pgmspace.h>
@@ -28,14 +25,13 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-#include <stdint.h>            // needed for uint8_t
+#include <stdint.h>
 
 #define byte uint8_t
 #define word uint16_t
 
 unsigned int n;				/* for random number function */
 int childsafe = 0;
-
 
 const byte bigdigits[10][6] PROGMEM = {
   {0b01111110,0b10000001,0b10000001,0b10000001,0b10000001,0b01111110},	// 0
@@ -76,33 +72,29 @@ const byte letter_widths[13] PROGMEM = {6, 4, 1, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6};
 #define HTclk    4
 #define HTdata   5
 
-#define HTclk0    HTport&=~(1<<HTclk)
-#define HTclk1    HTport|= (1<<HTclk)
-#define HTstrobe0 HTport&=~(1<<HTstrobe)
-#define HTstrobe1 HTport|= (1<<HTstrobe)
-#define HTdata0   HTport&=~(1<<HTdata)
-#define HTdata1   HTport|= (1<<HTdata)
-#define HTpinsetup() do{  HTddr |=(1<<HTstrobe)|(1<<HTclk)|(1<<HTdata); HTport|=(1<<HTstrobe)|(1<<HTclk)|(1<<HTdata);  }while(0)
+#define HTclk0    HTport &= ~(1 << HTclk)
+#define HTclk1    HTport |= (1 << HTclk)
+#define HTstrobe0 HTport &= ~(1 << HTstrobe)
+#define HTstrobe1 HTport |= (1 << HTstrobe)
+#define HTdata0   HTport &= ~(1 << HTdata)
+#define HTdata1   HTport |= (1 << HTdata)
+#define HTpinsetup() do{  HTddr |= (1 << HTstrobe) | (1 << HTclk) | (1 << HTdata); HTport |= (1 << HTstrobe) | (1 << HTclk) | (1 << HTdata);  }while(0)
         // set as output and all high
 
-
-
-#define key1 ((PIND&(1<<7))==0)
-#define key2 ((PIND&(1<<6))==0)
-#define key3 ((PIND&(1<<5))==0)
-#define keysetup() do{ DDRD&=0xff-(1<<7)-(1<<6)-(1<<5); PORTD|=(1<<7)+(1<<6)+(1<<5); }while(0)  //input, pull up
-
+#define key1 ((PIND&(1 << 7)) == 0)
+#define key2 ((PIND&(1 << 6)) == 0)
+#define key3 ((PIND&(1 << 5)) == 0)
+#define keysetup() do{ DDRD &= 0xff - (1 << 7) - (1 << 6) - (1 << 5); PORTD |= (1 << 7) + (1 << 6) + (1 << 5); }while(0)  //input, pull up
 
 byte leds[32];  //the screen array, 1 byte = 1 column, left to right, lsb at top.
-
 
 #define HTstartsys   0b100000000010 //start system oscillator
 #define HTstopsys    0b100000000000 //stop sytem oscillator and LED duty    <default
 #define HTsetclock   0b100000110000 //set clock to master with internal RC  <default
-#define HTsetlayout  0b100001000000 //NMOS 32*8 // 0b100-0010-ab00-0  a:0-NMOS,1-PMOS; b:0-32*8,1-24*16   default:ab=10
+#define HTsetlayout  0b100001000000 //NMOS 32*8 // 0b100-0010-ab00-0  a:0-NMOS,1-PMOS; b:0-32*8,1-24*16   default:ab = 10
 #define HTledon      0b100000000110 //start LEDs
 #define HTledoff     0b100000000100 //stop LEDs    <default
-#define HTsetbright  0b100101000000 //set brightness b=0..15  add b<<1  //0b1001010xxxx0 xxxx:brightness 0..15=1/16..16/16 PWM
+#define HTsetbright  0b100101000000 //set brightness b = 0..15  add b << 1  //0b1001010xxxx0 xxxx:brightness 0..15 = 1/16..16/16 PWM
 #define HTblinkon    0b100000010010 //Blinking on
 #define HTblinkoff   0b100000010000 //Blinking off  <default
 #define HTwrite      0b1010000000   // 101-aaaaaaa-dddd-dddd-dddd-dddd-dddd-... aaaaaaa:nibble adress 0..3F   (5F for 24*16)
@@ -111,8 +103,7 @@ byte leds[32];  //the screen array, 1 byte = 1 column, left to right, lsb at top
 //DATA: LSB first     transferring a byte (msb first) fills one row of one 8*8-matrix, msb left, starting with the left matrix
 //timing: pull strobe LOW, bits evaluated at rising clock edge, strobe high
 //commands can be queued: 100-ccccccccc-ccccccccc-ccccccccc-... (ccccccccc: without 100 at front)
-//setup: cast startsys, setclock, setlayout, ledon, brightness+(15<<1), blinkoff
-
+//setup: cast startsys, setclock, setlayout, ledon, brightness+(15 << 1), blinkoff
 
 
 int ADCsingleREAD(uint8_t adctouse)
@@ -139,12 +130,15 @@ int ADCsingleREAD(uint8_t adctouse)
 
 
 void HTsend(word data, byte bits) {  //MSB first
-    word bit=((word)1)<<(bits-1);
-    while(bit) {
+    word bit = ((word)1) << (bits-1);
+    while (bit) {
         HTclk0;
-        if (data & bit) HTdata1; else HTdata0;
+        if (data & bit)
+            HTdata1;
+        else
+            HTdata0;
         HTclk1;
-        bit>>=1;
+        bit >>= 1;
     }
 }
 
@@ -157,27 +151,27 @@ void HTcommand(word data) {
 void HTsendscreen(void) {
     HTstrobe0;
     HTsend(HTwrite,10);
-    for (byte mtx=0;mtx<4;mtx++)        //sending 8x8-matrices left to right, rows top to bottom, MSB left
-        for (byte row=0;row<8;row++) {  //while leds[] is organized in columns for ease of use.
-            byte q=0;
-            for (byte col=0;col<8;col++)  q = (q<<1) | ( (leds[col+(mtx<<3)]>>row)&1 ) ;
-            HTsend(q,8);
+    for (byte mtx = 0; mtx < 4; mtx++)        //sending 8x8-matrices left to right, rows top to bottom, MSB left
+        for (byte row = 0; row < 8; row++) {  //while leds[] is organized in columns for ease of use.
+            byte q = 0;
+            for (byte col = 0; col < 8; col++)
+                q = (q << 1) | ((leds[col + (mtx << 3)] >> row) & 1);
+            HTsend(q, 8);
         }
     HTstrobe1;
 }
-
 
 void HTsetup() {  //setting up the display
     HTcommand(HTstartsys);
     HTcommand(HTledon);
     HTcommand(HTsetclock);
     HTcommand(HTsetlayout);
-    HTcommand(HTsetbright+(8<<1));
+    HTcommand(HTsetbright + (8 << 1));
     HTcommand(HTblinkoff);
 }
 
 void HTbrightness(byte b) {
-    HTcommand(HTsetbright + ((b&15)<<1) );
+    HTcommand(HTsetbright + ((b & 15) << 1));
 }
 
 int gen_rand(void)
@@ -190,47 +184,47 @@ int gen_rand(void)
 //------------------------------------------------------------------------------------- CLOCK ------------------
 
 
-volatile byte sec=5;
-byte sec0=200, minute, hour, day, month; word year;
+volatile byte sec = 5;
+byte sec0 = 200, minute, hour, day, month; word year;
 
 
 inline void clocksetup() {  // CLOCK, interrupt every second
-    ASSR |= (1<<AS2);    //timer2 async from external quartz
-    TCCR2=0b00000101;    //normal,off,/128; 32768Hz/256/128 = 1 Hz
-    TIMSK |= (1<<TOIE2); //enable timer2-overflow-int
+    ASSR |= (1 << AS2);    //timer2 async from external quartz
+    TCCR2 = 0b00000101;    //normal,off,/128; 32768Hz/256/128 = 1 Hz
+    TIMSK |= (1 << TOIE2); //enable timer2-overflow-int
     sei();               //enable interrupts
 }
-
 
 // CLOCK interrupt
 ISR(TIMER2_OVF_vect) {     //timer2-overflow-int
     sec++;
 }
 
-
-
 void incsec(byte add) {
-    sec+=add;
-    while (sec>=60) {
-        sec-=60;  minute++;
-        while (minute>=60) {
-            minute -= 60;  hour++;
-            while (hour >=24) {
-                hour-=24;  day++;
+    sec += add;
+    while (sec >= 60) {
+        sec -= 60;
+        minute++;
+        while (minute >= 60) {
+            minute -= 60;
+            hour++;
+            while (hour >= 24) {
+                hour -= 24;
+                day++;
             }//24hours
         }//60min
     }//60sec
 }
 
 void decsec(byte sub) {
-    while (sub>0) {
-        if (sec>0) sec--;
+    while (sub > 0) {
+        if (sec > 0) sec--;
         else {
-            sec=59;
-            if (minute>0) minute--;
+            sec = 59;
+            if (minute > 0) minute--;
             else {
-                minute=59;
-                if (hour>0) hour--;
+                minute = 59;
+                if (hour > 0) hour--;
                 else {hour = 23; day--;}
             }//hour
         }//minute
@@ -239,7 +233,7 @@ void decsec(byte sub) {
 }
 
 byte clockhandler(void) {
-    if (sec==sec0)
+    if (sec == sec0)
         return 0;   //check if something changed
     sec0 = sec;
     incsec(0);  //just carry over
@@ -251,18 +245,29 @@ byte clockhandler(void) {
 
 
 void renderclock(void) {
-    byte col=0;
-    leds[col++]=0;	// add a 1 column space on the left
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&bigdigits[hour/10][i]);
-    leds[col++]=0;
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&bigdigits[hour%10][i]);
-    leds[col++]=0;
-    if (sec%2) {leds[col++]=0b00000000;leds[col++ ]=0b00100100;} else {leds[col++]=0b00100100; leds[col++]=0b00000000;}
-    leds[col++]=0;
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&bigdigits[minute/10][i]);
-    leds[col++]=0;
-    for (byte i=0;i<6;i++) leds[col++]=pgm_read_byte(&bigdigits[minute%10][i]);
-    leds[col++]=0;	// add a 1 column space on the right
+    byte col = 0;
+    leds[col++] = 0;	// add a 1 column space on the left
+    for (byte i = 0;i<6;i++) leds[col++] = pgm_read_byte(&bigdigits[hour / 10][i]);
+    leds[col++] = 0;
+    for (byte i = 0;i<6;i++) leds[col++] = pgm_read_byte(&bigdigits[hour % 10][i]);
+    leds[col++] = 0;
+
+    if (sec % 2) {
+        leds[col++] = 0b00000000;
+        leds[col++] = 0b00100100;
+    }
+    else {
+        leds[col++] = 0b00100100;
+        leds[col++] = 0b00000000;
+    }
+
+    leds[col++] = 0;
+    for (byte i = 0; i < 6; i++)
+        leds[col++] = pgm_read_byte(&bigdigits[minute / 10][i]);
+    leds[col++] = 0;
+    for (byte i = 0; i < 6; i++)
+        leds[col++] = pgm_read_byte(&bigdigits[minute % 10][i]);
+    leds[col++] = 0;	// add a 1 column space on the right
 }
 
 void renderword(unsigned int *w, unsigned int length, bool centre) {
@@ -313,8 +318,7 @@ void rendercs_off(void) {
     renderword(word, 5, true);
 }
 
-
-byte changing, bright=3;
+byte changing, bright = 3;
 
 int main(void) {  //==================================================================== main ==================
 
@@ -323,8 +327,8 @@ int main(void) {  //============================================================
     keysetup();
     clocksetup();
 
-    for (byte i=0;i<32;i++)
-        leds[i]=0b01010101<<(i%2);
+    for (byte i = 0; i < 32; i++)
+        leds[i] = 0b01010101 << (i % 2);
 
     HTsendscreen();
 
@@ -332,11 +336,11 @@ int main(void) {  //============================================================
     minute = 00;
 
     while (1) {
-        bright = (ADCsingleREAD(0) - 80) / 62;  // set the display brightness
+        bright = 1; // (ADCsingleREAD(0) - 80) / 62;  // set the display brightness
         HTbrightness(bright);
 
         if (key1) {
-            if (changing>250)
+            if (changing > 250)
                 incsec(20);
             else {
                 changing++;
@@ -344,7 +348,7 @@ int main(void) {  //============================================================
             }
         }
         else if (key2) {
-            if (changing>250)
+            if (changing > 250)
                 decsec(20);
             else {
                 changing++;
